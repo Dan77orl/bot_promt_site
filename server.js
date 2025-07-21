@@ -6,7 +6,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // URL на опубликованный Google Docs
-const GOOGLE_DOC_URL = "https://docs.google.com/document/d/e/2PACX-1vSvkiilfUZ4WwEDgN5gIod_Q5Q419x7B_pUGxV8TLuGIEi7_KF-f52ynJz3DWfl4ZvOWS1ryUqj-Tdu/pub";
+const DOC_TXT_URL = "https://docs.google.com/document/d/1l3Xurs93HU9WlS6fKxyvBZFkRIjCdxgd9ktsuf5HSrI/export?format=txt";
+
 
 app.use(cors());
 app.use(express.json());
