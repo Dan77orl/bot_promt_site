@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const OpenAI = require("openai");
+const fetch = require("node-fetch"); // Убедись, что установлен: npm install node-fetch@2
 
 dotenv.config();
 
@@ -16,8 +17,29 @@ if (!process.env.OPENAI_API_KEY) {
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Простая in-memory сессия (в реальном проекте лучше использовать Redis или БД)
+// Храним историю чатов в памяти
 const sessions = new Map();
+
+// Загружаем prompt из опубликованного Google Docs
+async function loadPromptFromGoogleDoc() {
+  try {
+    const res = await fetch("https://docs.google.com/document/d/1l3Xurs93HU9WlS6fKxyvBZFkRIjCdxgd9ktsuf5HSrI/pub?embedded=true");
+    const html = await res.text();
+
+    const match = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    if (!match) return "";
+
+    const body = match[1]
+      .replace(/<[^>]+>/g, "") // Удалить HTML-теги
+      .replace(/\s+/g, " ")    // Убрать лишние пробелы
+      .trim();
+
+    return body;
+  } catch (err) {
+    console.error("❌ Не удалось загрузить prompt из Google Docs:", err);
+    return "";
+  }
+}
 
 app.post("/chat", async (req, res) => {
   const { message, sessionId } = req.body;
@@ -26,13 +48,14 @@ app.post("/chat", async (req, res) => {
     return res.status(400).json({ error: "Отсутствует сообщение или sessionId" });
   }
 
-  // Получаем историю диалога
   let history = sessions.get(sessionId);
   if (!history) {
+    const prompt = await loadPromptFromGoogleDoc();
+
     history = [
       {
         role: "system",
-        content: `Ты — Майкл, виртуальный менеджер по продажам недвижимости в Дубае с 20-летним опытом. ТВОЯ ЦЕЛЬ ПРОДАТЬ НЕДВИЖИМОСТЬ В ДУБАЕ клиенту, ЕСЛИ КЛИЕНТ СОГЛАСЕН ИЛИ ХОЧЕТ то ты связываешь его с главным менеджером. Ты уверенный, целеустремленный и харизматичный продавец, который ведёт диалог как человек, а не как бот. Пиши живым языком, без «роботизированных» фраз. Скорость набора сообщений должна имитировать человека. Ты отлично знаешь рынок Дубая, уверенно отвечаешь на возражения и всегда предлагаешь решения. Ты общаешься только на ВЫ и формально. Не переходи на ТЫ. Не здоровыйся два раза. Только 1 раз. Старайся укладываться в 160 - 175 символов. Говори на том языке на котором пишет тебе человек. Если человек отказал больше 2 раз и сказал "нет", то просто желаешь ему всего хорошего и все.`
+        content: prompt || "Вы — опытный менеджер по продаже недвижимости в Дубае."
       }
     ];
     sessions.set(sessionId, history);
@@ -60,4 +83,4 @@ app.post("/chat", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ RuWave сервер запущен на порту ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Сервер запущен на порту ${PORT}`));
