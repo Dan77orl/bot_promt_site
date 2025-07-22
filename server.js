@@ -7,39 +7,60 @@ require("dotenv").config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// URL на экспортированный TXT-документ
-const DOC_TXT_URL = "https://docs.google.com/document/d/1l3Xurs93HU9WlS6fKxyvBZFkRIjCdxgd9ktsuf5HSrI/export?format=txt";
+const GOOGLE_DOC_URL = "https://docs.google.com/document/d/1l3Xurs93HU9WlS6fKxyvBZFkRIjCdxgd9ktsuf5HSrI/export?format=txt";
 
-// Инициализация OpenAI
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+const sessions = new Map();
 
 app.use(cors());
 app.use(express.json());
 
 app.post("/chat", async (req, res) => {
-  const userMessage = req.body.message;
-  const sessionId = req.body.sessionId;
+  const { message, sessionId } = req.body;
+
+  if (!message?.trim() || !sessionId) {
+    return res.status(400).json({ error: "Отсутствует сообщение или sessionId" });
+  }
+
+  let history = sessions.get(sessionId);
+
+  if (!history) {
+    try {
+      const promptRes = await fetch(GOOGLE_DOC_URL);
+      const systemPrompt = await promptRes.text();
+
+      history = [
+        {
+          role: "system",
+          content: systemPrompt.trim()
+        }
+      ];
+      sessions.set(sessionId, history);
+    } catch (err) {
+      console.error("Ошибка загрузки промта из Google Docs:", err);
+      return res.status(500).json({ error: "Ошибка загрузки системного промта" });
+    }
+  }
+
+  history.push({ role: "user", content: message });
 
   try {
-    // Получаем системный промт из Google Docs
-    const docRes = await fetch(DOC_TXT_URL);
-    const systemPrompt = await docRes.text();
-
-    const messages = [
-      { role: "system", content: systemPrompt.trim() },
-      { role: "user", content: userMessage }
-    ];
-
     const completion = await openai.chat.completions.create({
       model: "gpt-4.1",
-      messages
+      messages: history,
+      max_tokens: 500,
+      temperature: 0.7
     });
 
-    const reply = completion.choices[0].message.content;
+    const reply = completion.choices?.[0]?.message?.content || "⚠️ Не получил ответ от GPT";
+
+    history.push({ role: "assistant", content: reply });
+
     res.json({ reply });
   } catch (err) {
-    console.error("Ошибка:", err);
-    res.status(500).json({ reply: "❌ Ошибка на сервере" });
+    console.error("OpenAI ошибка:", err);
+    res.status(500).json({ error: "Ошибка GPT", detail: err.message });
   }
 });
 
