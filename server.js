@@ -22,10 +22,10 @@ const PROMPT_URL =
 // Кэшируем, чтобы не тянуть каждый раз
 let cachedSystemPrompt = null;
 async function loadSystemPrompt() {
-  if (cachedSystemPrompt) return cachedSystemPrompt;
+  //if (cachedSystemPrompt) return cachedSystemPrompt;
   const res = await fetch(PROMPT_URL);
   if (!res.ok) throw new Error("Не удалось загрузить промт из Google Doc");
-  cachedSystemPrompt = await res.text();
+  //cachedSystemPrompt = await res.text();
   return cachedSystemPrompt;
 }
 
