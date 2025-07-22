@@ -13,8 +13,6 @@ async function loadSystemPrompt() {
   return text;
 }
 
-
-
 dotenv.config();
 
 const app = express();
@@ -27,8 +25,6 @@ if (!process.env.OPENAI_API_KEY) {
 }
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-// Простая in-memory сессия (в реальном проекте лучше использовать Redis или БД)
 const sessions = new Map();
 
 app.post("/chat", async (req, res) => {
@@ -38,17 +34,10 @@ app.post("/chat", async (req, res) => {
     return res.status(400).json({ error: "Отсутствует сообщение или sessionId" });
   }
 
-  // Получаем историю диалога
   let history = sessions.get(sessionId);
   if (!history) {
-   const systemPrompt = await loadSystemPrompt();
-history = [
-  {
-    role: "system",
-    content: systemPrompt
-  }
-];
-
+    const systemPrompt = await loadSystemPrompt();
+    history = [{ role: "system", content: systemPrompt }];
     sessions.set(sessionId, history);
   }
 
@@ -63,7 +52,6 @@ history = [
     });
 
     const reply = completion.choices?.[0]?.message?.content || "⚠️ Не получил ответ от GPT";
-
     history.push({ role: "assistant", content: reply });
 
     res.json({ reply });
@@ -74,4 +62,4 @@ history = [
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ RuWave сервер запущен на порту ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Сервер запущен на порту ${PORT}`));
