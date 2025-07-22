@@ -6,15 +6,13 @@ const fetch = require("node-fetch");
 
 const PROMPT_URL = "https://docs.google.com/document/d/1l3Xurs93HU9WlS6fKxyvBZFkRIjCdxgd9ktsuf5HSrI/export?format=txt";
 
-let cachedPrompt = null;
 async function loadSystemPrompt() {
-  if (cachedPrompt) return cachedPrompt;
   const res = await fetch(PROMPT_URL);
   if (!res.ok) throw new Error("Не удалось загрузить system prompt из Google Docs");
   const text = await res.text();
-  cachedPrompt = text;
   return text;
 }
+
 
 
 dotenv.config();
