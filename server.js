@@ -15,7 +15,6 @@ async function loadSystemPrompt() {
   return cachedPrompt;
 }
 
-
 dotenv.config();
 
 const app = express();
@@ -42,9 +41,8 @@ app.post("/chat", async (req, res) => {
   // Получаем историю диалога
   let history = sessions.get(sessionId);
   if (!history) {
-      const systemPrompt = await loadSystemPrompt();
+    const systemPrompt = await loadSystemPrompt();
     history = [{ role: "system", content: systemPrompt }];
-
     sessions.set(sessionId, history);
   }
 
@@ -66,6 +64,19 @@ app.post("/chat", async (req, res) => {
   } catch (err) {
     console.error("OpenAI ошибка:", err);
     res.status(500).json({ error: "Ошибка GPT", detail: err.message });
+  }
+});
+
+// 🔧 Прокси-эндпоинт для фронтенда
+app.get("/system-prompt", async (req, res) => {
+  try {
+    const response = await fetch(PROMPT_URL);
+    if (!response.ok) throw new Error("Ошибка загрузки документа");
+    const text = await response.text();
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.send(text);
+  } catch (err) {
+    res.status(500).send("Не удалось загрузить prompt");
   }
 });
 
