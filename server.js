@@ -8,7 +8,8 @@ const PROMPT_URL = "https://docs.google.com/document/d/1l3Xurs93HU9WlS6fKxyvBZFk
 let cachedPrompt = null;
 
 async function loadSystemPrompt() {
-
+  if (cachedPrompt) return cachedPrompt;
+  const res = await fetch(PROMPT_URL);
   if (!res.ok) throw new Error("Не удалось загрузить prompt из Google Docs");
   cachedPrompt = await res.text();
   return cachedPrompt;
