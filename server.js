@@ -4,11 +4,36 @@ const dotenv = require("dotenv");
 const OpenAI = require("openai");
 const fetch = require("node-fetch");
 
+const nodemailer = require("nodemailer");
+
+
 dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+async function sendChatHistoryByEmail(history, email) {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
+
+  const formattedMessages = history.map(
+    (msg, i) => `${i + 1}. [${msg.role.toUpperCase()}] ${msg.content}`
+  ).join("\n\n");
+
+  await transporter.sendMail({
+    from: `"RuWave Бот" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: "История чата RuWave",
+    text: formattedMessages
+  });
+}
+
 
 
 const PROMPT_URL = "https://docs.google.com/document/d/1l3Xurs93HU9WlS6fKxyvBZFkRIjCdxgd9ktsuf5HSrI/export?format=txt";
@@ -88,4 +113,22 @@ app.get("/system-prompt", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
+app.post("/email", async (req, res) => {
+  const { history, email } = req.body;
+
+  if (!email || !Array.isArray(history)) {
+    return res.status(400).json({ error: "Неверные данные" });
+  }
+
+  try {
+    await sendChatHistoryByEmail(history, email);
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error("❌ Ошибка отправки email:", err);
+    res.status(500).json({ error: "Ошибка при отправке письма" });
+  }
+});
+
+
 app.listen(PORT, () => console.log(`✅ RuWave сервер запущен на порту ${PORT}`));
