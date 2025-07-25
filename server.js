@@ -4,6 +4,13 @@ const dotenv = require("dotenv");
 const OpenAI = require("openai");
 const fetch = require("node-fetch");
 
+dotenv.config();
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+
 const PROMPT_URL = "https://docs.google.com/document/d/1l3Xurs93HU9WlS6fKxyvBZFkRIjCdxgd9ktsuf5HSrI/export?format=txt";
 let cachedPrompt = null;
 
