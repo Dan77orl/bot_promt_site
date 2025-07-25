@@ -3,8 +3,6 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const OpenAI = require("openai");
 const fetch = require("node-fetch");
-const nodemailer = require("nodemailer");
-
 
 const PROMPT_URL = "https://docs.google.com/document/d/1l3Xurs93HU9WlS6fKxyvBZFkRIjCdxgd9ktsuf5HSrI/export?format=txt";
 let cachedPrompt = null;
@@ -16,46 +14,6 @@ async function loadSystemPrompt() {
   cachedPrompt = await res.text();
   return cachedPrompt;
 }
-
-async function sendChatHistoryByEmail(history, email) {
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: "irusslt@gmail.com", // твоя почта
-      pass: "csrb xlfc sblq hksu" // пароль приложения
-    }
-  });
-
-  const textBody = history
-    .map(m => `${m.role === "user" ? "Клиент" : "Менеджер"}: ${m.content}`)
-    .join("\n\n");
-
-  await transporter.sendMail({
-    from: `"RuWave Bot" <irusslt@gmail.com>`,
-    to: email,
-    subject: "📅 История чата с клиентом",
-    text: textBody
-  });
-
-  console.log(`📧 История чата отправлена на ${email}`);
-}
-
-app.post("/email", async (req, res) => {
-  const { history, email } = req.body;
-  if (!email || !Array.isArray(history)) {
-    return res.status(400).json({ error: "Неверные данные" });
-  }
-
-  try {
-    await sendChatHistoryByEmail(history, email);
-    res.status(200).json({ success: true });
-  } catch (err) {
-    console.error("Ошибка отправки email:", err);
-    res.status(500).json({ error: "Не удалось отправить историю" });
-  }
-});
-
-
 
 dotenv.config();
 
