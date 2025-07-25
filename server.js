@@ -7,11 +7,6 @@ const fetch = require("node-fetch");
 const nodemailer = require("nodemailer");
 
 
-dotenv.config();
-
-const app = express();
-app.use(cors());
-app.use(express.json());
 
 async function sendChatHistoryByEmail(history, email) {
   const transporter = nodemailer.createTransport({
