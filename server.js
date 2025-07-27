@@ -77,7 +77,7 @@ app.post("/chat", async (req, res) => {
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4.1",
+      model: "gpt-4",
       messages: history,
       max_tokens: 500,
       temperature: 0.7
